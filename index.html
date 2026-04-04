@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ResumeIQ — AI Resume Analyzer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Syne:wght@400;500;600;700&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg:        #0a0a0b;
+    --bg2:       #111113;
+    --bg3:       #18181b;
+    --bg4:       #222226;
+    --line:      rgba(255,255,255,0.07);
+    --line2:     rgba(255,255,255,0.13);
+    --text:      #f0ede8;
+    --muted:     #8a8680;
+    --dim:       #4a4845;
+    --gold:      #c9a96e;
+    --gold2:     #e8c990;
+    --teal:      #5bbfb5;
+    --rose:      #d4756b;
+    --blue:      #7ba7d4;
+    --green:     #7bbf8a;
+    --amber:     #d4a76b;
+    --font-display: 'Cormorant Garamond', serif;
+    --font-ui:   'Syne', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-ui);
+    font-size: 15px;
+    line-height: 1.6;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--dim); border-radius: 2px; }
+
+  /* ── Noise texture overlay ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none; opacity: 0.4;
+  }
+
+  /* ── Header / Nav ── */
+  header {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 2.5rem;
+    height: 60px;
+    border-bottom: 1px solid var(--line);
+    background: rgba(10,10,11,0.85);
+    backdrop-filter: blur(16px);
+  }
+
+  .logo {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--text);
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .logo-dot {
+    width: 7px; height: 7px;
+    background: var(--gold);
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .nav-links {
+    display: flex; gap: 2rem; list-style: none;
+  }
+
+  .nav-links a {
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .nav-links a:hover { color: var(--text); }
+
+  .nav-badge {
+    font-size: 10px;
+    font-family: var(--font-mono);
+    color: var(--gold);
+    border: 1px solid rgba(201,169,110,0.3);
+    padding: 3px 8px;
+    border-radius: 2px;
+    letter-spacing: 0.08em;
+  }
+
+  /* ── Hero ── */
+  .hero {
+    position: relative; z-index: 1;
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center;
+    padding: 120px 2rem 60px;
+    overflow: hidden;
+  }
+
+  .hero-grid {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 100%);
+  }
+
+  .hero-glow {
+    position: absolute;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(201,169,110,0.06) 0%, transparent 70%);
+    border-radius: 50%;
+    top: 50%; left: 50%; transform: translate(-50%, -60%);
+  }
+
+  .hero-tag {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 1.5rem;
+    display: flex; align-items: center; gap: 10px;
+    opacity: 0; animation: fadeUp 0.6s 0.2s ease forwards;
+  }
+
+  .hero-tag::before, .hero-tag::after {
+    content: '';
+    display: block; width: 32px; height: 1px;
+    background: var(--gold); opacity: 0.4;
+  }
+
+  h1.hero-title {
+    font-family: var(--font-display);
+    font-size: clamp(3rem, 8vw, 7rem);
+    font-weight: 300;
+    line-height: 1.05;
+    letter-spacing: -0.01em;
+    color: var(--text);
+    opacity: 0; animation: fadeUp 0.8s 0.35s ease forwards;
+  }
+
+  h1.hero-title em {
+    font-style: italic;
+    color: var(--gold);
+    display: block;
+  }
+
+  .hero-sub {
+    margin-top: 1.5rem;
+    font-size: 15px;
+    color: var(--muted);
+    max-width: 480px;
+    line-height: 1.7;
+    opacity: 0; animation: fadeUp 0.8s 0.5s ease forwards;
+  }
+
+  .hero-cta {
+    margin-top: 2.5rem;
+    display: flex; gap: 1rem;
+    opacity: 0; animation: fadeUp 0.8s 0.65s ease forwards;
+  }
+
+  .btn-primary {
+    font-family: var(--font-ui);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--bg);
+    background: var(--gold);
+    border: none; cursor: pointer;
+    padding: 13px 28px;
+    border-radius: 2px;
+    transition: background 0.2s, transform 0.15s;
+    text-decoration: none; display: inline-block;
+  }
+
+  .btn-primary:hover { background: var(--gold2); transform: translateY(-1px); }
+  .btn-primary:active { transform: translateY(0); }
+
+  .btn-ghost {
+    font-family: var(--font-ui);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    background: transparent;
+    border: 1px solid var(--line2); cursor: pointer;
+    padding: 13px 28px;
+    border-radius: 2px;
+    transition: color 0.2s, border-color 0.2s;
+    text-decoration: none; display: inline-block;
+  }
+
+  .btn-ghost:hover { color: var(--text); border-color: var(--dim); }
+
+  .hero-stats {
+    position: absolute; bottom: 2rem; left: 0; right: 0;
+    display: flex; justify-content: center; gap: 4rem;
+    opacity: 0; animation: fadeUp 0.8s 0.8s ease forwards;
+  }
+
+  .stat { text-align: center; }
+  .stat-val {
+    font-family: var(--font-display);
+    font-size: 2rem; font-weight: 300;
+    color: var(--gold);
+  }
+  .stat-label {
+    font-size: 11px; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--muted);
+  }
+
+  /* ── Section common ── */
+  .section {
+    position: relative; z-index: 1;
+    padding: 5rem 2rem;
+    max-width: 1100px; margin: 0 auto;
+  }
+
+  .section-label {
+    font-family: var(--font-mono);
+    font-size: 11px; letter-spacing: 0.2em;
+    text-transform: uppercase; color: var(--gold);
+    margin-bottom: 0.5rem;
+  }
+
+  .section-title {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 300; line-height: 1.1;
+    margin-bottom: 1rem;
+  }
+
+  /* ── Analyzer Panel ── */
+  #analyzer {
+    position: relative; z-index: 1;
+    background: var(--bg2);
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    padding: 5rem 2rem;
+  }
+
+  .analyzer-inner {
+    max-width: 900px; margin: 0 auto;
+  }
+
+  .analyzer-header {
+    display: flex; justify-content: space-between; align-items: flex-end;
+    margin-bottom: 2.5rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .analyzer-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group.full { grid-column: 1 / -1; }
+
+  .form-label {
+    font-size: 11px; font-weight: 600;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .form-input, .form-textarea, .form-select {
+    font-family: var(--font-ui);
+    font-size: 14px;
+    color: var(--text);
+    background: var(--bg3);
+    border: 1px solid var(--line2);
+    border-radius: 3px;
+    padding: 12px 14px;
+    transition: border-color 0.2s, background 0.2s;
+    outline: none;
+    width: 100%;
+  }
+
+  .form-input:focus, .form-textarea:focus, .form-select:focus {
+    border-color: rgba(201,169,110,0.4);
+    background: var(--bg4);
+  }
+
+  .form-input::placeholder, .form-textarea::placeholder { color: var(--dim); }
+
+  .form-textarea {
+    resize: vertical;
+    min-height: 180px;
+    line-height: 1.6;
+  }
+
+  .form-textarea.short { min-height: 100px; }
+
+  .form-select option { background: var(--bg3); }
+
+  .char-counter {
+    font-family: var(--font-mono);
+    font-size: 11px; color: var(--dim);
+    text-align: right; margin-top: 3px;
+  }
+
+  .form-actions {
+    grid-column: 1 / -1;
+    display: flex; align-items: center; gap: 1rem;
+    padding-top: 0.5rem;
+  }
+
+  .btn-analyze {
+    font-family: var(--font-ui);
+    font-size: 13px; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--bg); background: var(--gold);
+    border: none; cursor: pointer;
+    padding: 15px 40px; border-radius: 2px;
+    transition: background 0.2s, transform 0.15s;
+    display: flex; align-items: center; gap: 10px;
+  }
+
+  .btn-analyze:hover { background: var(--gold2); transform: translateY(-1px); }
+  .btn-analyze:active { transform: translateY(0); }
+  .btn-analyze:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  .btn-analyze svg { width: 16px; height: 16px; }
+
+  .form-note {
+    font-size: 12px; color: var(--dim);
+    line-height: 1.5;
+  }
+
+  /* ── Error ── */
+  .error-box {
+    display: none;
+    grid-column: 1 / -1;
+    background: rgba(212,117,107,0.08);
+    border: 1px solid rgba(212,117,107,0.25);
+    border-radius: 3px;
+    padding: 12px 16px;
+    font-size: 13px; color: var(--rose);
+    display: none; align-items: center; gap: 10px;
+  }
+
+  .error-box.visible { display: flex; }
+
+  /* ── Loading ── */
+  .loading-overlay {
+    display: none;
+    flex-direction: column; align-items: center; justify-content: center;
+    padding: 4rem 2rem;
+    gap: 1.5rem;
+  }
+
+  .loading-overlay.visible { display: flex; }
+
+  .loader-ring {
+    width: 56px; height: 56px;
+    border: 1.5px solid var(--line2);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-title {
+    font-family: var(--font-display);
+    font-size: 1.5rem; font-weight: 300;
+    color: var(--text);
+  }
+
+  .loading-stage {
+    font-family: var(--font-mono);
+    font-size: 12px; color: var(--gold);
+    letter-spacing: 0.1em;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  @keyframes pulse { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
+
+  .loading-bar-wrap {
+    width: 280px; height: 2px;
+    background: var(--line2);
+    border-radius: 1px; overflow: hidden;
+  }
+
+  .loading-bar-fill {
+    height: 100%; background: var(--gold);
+    border-radius: 1px;
+    animation: loadprogress 2.5s ease-in-out infinite;
+  }
+
+  @keyframes loadprogress {
+    0% { width: 0; margin-left: 0; }
+    50% { width: 70%; margin-left: 0; }
+    100% { width: 0; margin-left: 100%; }
+  }
+
+  /* ── Results ── */
+  .results-panel {
+    display: none;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .results-panel.visible { display: flex; }
+
+  .results-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding-bottom: 2rem; margin-bottom: 2.5rem;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .results-title {
+    font-family: var(--font-display);
+    font-size: 2rem; font-weight: 300;
+  }
+
+  .results-title span { color: var(--gold); }
+
+  .btn-reset {
+    font-family: var(--font-ui);
+    font-size: 12px; font-weight: 500;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--muted);
+    background: transparent;
+    border: 1px solid var(--line2); cursor: pointer;
+    padding: 9px 18px; border-radius: 2px;
+    transition: color 0.2s, border-color 0.2s;
+  }
+
+  .btn-reset:hover { color: var(--text); border-color: var(--dim); }
+
+  /* Score cards */
+  .score-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 4px; overflow: hidden;
+    margin-bottom: 2.5rem;
+  }
+
+  .score-card {
+    background: var(--bg3);
+    padding: 1.5rem 1rem;
+    text-align: center;
+    transition: background 0.2s;
+  }
+
+  .score-card:hover { background: var(--bg4); }
+
+  .score-num {
+    font-family: var(--font-display);
+    font-size: 3.5rem; font-weight: 300;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .score-lbl {
+    font-size: 10px; font-weight: 600;
+    letter-spacing: 0.15em; text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .score-tag {
+    font-family: var(--font-mono);
+    font-size: 10px; letter-spacing: 0.1em;
+    margin-top: 6px; display: block;
+  }
+
+  .c-great  { color: var(--green); }
+  .c-good   { color: var(--blue); }
+  .c-warn   { color: var(--amber); }
+  .c-poor   { color: var(--rose); }
+
+  /* Summary */
+  .summary-block {
+    background: var(--bg3);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--gold);
+    border-radius: 3px;
+    padding: 1.5rem 2rem;
+    margin-bottom: 2.5rem;
+    font-family: var(--font-display);
+    font-size: 1.2rem; font-weight: 300;
+    line-height: 1.7;
+    color: var(--text);
+    font-style: italic;
+  }
+
+  /* Two-col layout */
+  .results-cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-bottom: 2rem;
+  }
+
+  .res-section { display: flex; flex-direction: column; gap: 1rem; }
+
+  .res-section-label {
+    font-size: 10px; font-weight: 600;
+    letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--gold);
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  /* Category bars */
+  .cat-bar { display: flex; align-items: center; gap: 12px; }
+
+  .cat-name {
+    font-size: 12px; color: var(--muted);
+    width: 130px; flex-shrink: 0;
+  }
+
+  .cat-track {
+    flex: 1; height: 3px;
+    background: var(--bg4); border-radius: 2px; overflow: hidden;
+  }
+
+  .cat-fill {
+    height: 100%; border-radius: 2px;
+    background: linear-gradient(90deg, var(--gold), var(--gold2));
+    transition: width 1.2s cubic-bezier(0.16,1,0.3,1);
+  }
+
+  .cat-pct {
+    font-family: var(--font-mono);
+    font-size: 11px; color: var(--muted); width: 28px; text-align: right;
+  }
+
+  /* Keyword chips */
+  .chips-wrap { display: flex; flex-wrap: wrap; gap: 6px; }
+
+  .chip {
+    font-family: var(--font-mono);
+    font-size: 11px; padding: 4px 10px;
+    border-radius: 2px;
+    letter-spacing: 0.04em;
+  }
+
+  .chip-match {
+    background: rgba(123,191,138,0.1);
+    border: 1px solid rgba(123,191,138,0.25);
+    color: var(--green);
+  }
+
+  .chip-miss {
+    background: rgba(212,117,107,0.08);
+    border: 1px solid rgba(212,117,107,0.2);
+    color: var(--rose);
+  }
+
+  /* Points list */
+  .points-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .point-item {
+    display: flex; gap: 12px;
+    font-size: 13px; line-height: 1.55;
+    color: var(--muted);
+  }
+
+  .point-marker {
+    width: 18px; height: 18px; flex-shrink: 0;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin-top: 1px;
+    font-size: 9px; font-weight: 700;
+  }
+
+  .pm-pos { background: rgba(123,191,138,0.15); color: var(--green); }
+  .pm-neg { background: rgba(212,117,107,0.12); color: var(--rose); }
+  .pm-tip { background: rgba(123,167,212,0.12); color: var(--blue); }
+
+  /* Features grid */
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 4px; overflow: hidden;
+    margin-top: 3rem;
+  }
+
+  .feat-card {
+    background: var(--bg2);
+    padding: 2rem;
+    transition: background 0.2s;
+  }
+
+  .feat-card:hover { background: var(--bg3); }
+
+  .feat-icon {
+    width: 36px; height: 36px;
+    border: 1px solid var(--line2);
+    border-radius: 3px;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 1rem;
+    color: var(--gold);
+  }
+
+  .feat-icon svg { width: 16px; height: 16px; }
+
+  .feat-title {
+    font-size: 14px; font-weight: 600;
+    margin-bottom: 6px; color: var(--text);
+  }
+
+  .feat-desc {
+    font-size: 13px; color: var(--muted); line-height: 1.6;
+  }
+
+  /* Footer */
+  footer {
+    position: relative; z-index: 1;
+    background: var(--bg);
+    border-top: 1px solid var(--line);
+    padding: 2rem;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+
+  .footer-logo {
+    font-family: var(--font-display);
+    font-size: 1.2rem; color: var(--muted);
+  }
+
+  .footer-note {
+    font-size: 12px; color: var(--dim);
+  }
+
+  /* ── Animations ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    header { padding: 0 1rem; }
+    .nav-links { display: none; }
+    .analyzer-form { grid-template-columns: 1fr; }
+    .score-grid { grid-template-columns: 1fr 1fr; }
+    .results-cols { grid-template-columns: 1fr; }
+    .features-grid { grid-template-columns: 1fr; }
+    .hero-stats { gap: 2rem; }
+    .form-group.full { grid-column: 1; }
+  }
+
+  /* ── Divider ── */
+  .hr { height: 1px; background: var(--line); margin: 2rem 0; }
+</style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<header>
+  <div class="logo">
+    <span class="logo-dot"></span>
+    ResumeIQ
+  </div>
+  <nav>
+    <ul class="nav-links">
+      <li><a href="#analyzer">Analyze</a></li>
+      <li><a href="#features">Features</a></li>
+    </ul>
+  </nav>
+  <span class="nav-badge">AI Powered</span>
+</header>
+
+<!-- ── Hero ── -->
+<section class="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-glow"></div>
+
+  <div class="hero-tag">Resume Intelligence</div>
+
+  <h1 class="hero-title">
+    Know exactly<br/>
+    <em>where you stand</em>
+  </h1>
+
+  <p class="hero-sub">
+    AI-powered resume analysis that scores your resume, finds missing keywords,
+    and gives you a clear roadmap to land more interviews.
+  </p>
+
+  <div class="hero-cta">
+    <a href="#analyzer" class="btn-primary">Analyze my resume</a>
+    <a href="#features" class="btn-ghost">See how it works</a>
+  </div>
+
+  <div class="hero-stats">
+    <div class="stat">
+      <div class="stat-val">98%</div>
+      <div class="stat-label">ATS accuracy</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val">6+</div>
+      <div class="stat-label">Score dimensions</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val">&lt;10s</div>
+      <div class="stat-label">Analysis time</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Analyzer Section ── -->
+<section id="analyzer">
+  <div class="analyzer-inner">
+
+    <div class="analyzer-header">
+      <div>
+        <div class="section-label">AI Analyzer</div>
+        <div class="section-title" style="font-size:2rem; margin-bottom:0;">Start your analysis</div>
+      </div>
+      <div style="font-size:12px; color:var(--dim); max-width:220px; text-align:right; line-height:1.6;">
+        Paste your resume text below. Add a target role for tailored results.
+      </div>
+    </div>
+
+    <!-- Form -->
+    <div id="form-area">
+      <div class="analyzer-form">
+
+        <div class="form-group full">
+          <label class="form-label" for="resume-text">Resume text *</label>
+          <textarea
+            class="form-textarea"
+            id="resume-text"
+            placeholder="Paste your entire resume here — work experience, education, skills, summary, achievements..."
+            oninput="updateCharCount()"
+          ></textarea>
+          <div class="char-counter"><span id="char-count">0</span> / 8000 characters</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="target-role">Target role</label>
+          <input class="form-input" id="target-role" type="text" placeholder="e.g. Senior Product Manager" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="industry">Industry</label>
+          <input class="form-input" id="industry" type="text" placeholder="e.g. Fintech, Healthcare, SaaS…" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="experience">Experience level</label>
+          <select class="form-select form-input" id="experience">
+            <option value="" disabled selected>Select level</option>
+            <option value="entry">Entry level (0–2 yrs)</option>
+            <option value="mid">Mid level (3–5 yrs)</option>
+            <option value="senior">Senior (6–10 yrs)</option>
+            <option value="executive">Executive (10+ yrs)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="resume-type">Resume type</label>
+          <select class="form-select form-input" id="resume-type">
+            <option value="" disabled selected>Select type</option>
+            <option value="chronological">Chronological</option>
+            <option value="functional">Functional / Skills-based</option>
+            <option value="hybrid">Hybrid / Combination</option>
+          </select>
+        </div>
+
+        <div class="form-group full">
+          <label class="form-label" for="job-desc">Job description (optional — for keyword matching)</label>
+          <textarea
+            class="form-textarea short"
+            id="job-desc"
+            placeholder="Paste the job description here to get precise keyword gap analysis and tailored improvement tips…"
+          ></textarea>
+        </div>
+
+        <div class="error-box" id="error-box">
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <span id="error-text"></span>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn-analyze" id="analyze-btn" onclick="runAnalysis()">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+            </svg>
+            Analyze resume
+          </button>
+          <p class="form-note">Analysis takes 5–10 seconds. Your data is never stored.</p>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading-overlay" id="loading-overlay">
+      <div class="loader-ring"></div>
+      <div class="loading-title">Analyzing your resume…</div>
+      <div class="loading-stage" id="loading-stage">Reading content</div>
+      <div class="loading-bar-wrap"><div class="loading-bar-fill"></div></div>
+    </div>
+
+    <!-- Results -->
+    <div class="results-panel" id="results-panel">
+
+      <div class="results-header">
+        <div>
+          <div class="section-label">Analysis complete</div>
+          <div class="results-title">Your <span>resume report</span></div>
+        </div>
+        <button class="btn-reset" onclick="resetForm()">← Analyze another</button>
+      </div>
+
+      <!-- Score row -->
+      <div class="score-grid" id="score-grid"></div>
+
+      <!-- Summary -->
+      <div class="summary-block" id="summary-block"></div>
+
+      <!-- Two-column: categories + keywords -->
+      <div class="results-cols">
+        <div class="res-section">
+          <div class="res-section-label">Category scores</div>
+          <div id="cat-bars"></div>
+        </div>
+        <div class="res-section">
+          <div class="res-section-label">Keyword analysis</div>
+          <div style="font-size:11px; color:var(--muted); margin-bottom:6px; letter-spacing:0.05em;">Matched keywords</div>
+          <div class="chips-wrap" id="matched-chips" style="margin-bottom:16px;"></div>
+          <div style="font-size:11px; color:var(--muted); margin-bottom:6px; letter-spacing:0.05em;">Missing / recommended</div>
+          <div class="chips-wrap" id="missing-chips"></div>
+        </div>
+      </div>
+
+      <div class="hr"></div>
+
+      <!-- Three columns: strengths / improve / tips -->
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:2rem;">
+        <div class="res-section">
+          <div class="res-section-label">Strengths</div>
+          <div class="points-list" id="strengths-list"></div>
+        </div>
+        <div class="res-section">
+          <div class="res-section-label">Areas to improve</div>
+          <div class="points-list" id="improve-list"></div>
+        </div>
+        <div class="res-section">
+          <div class="res-section-label">Actionable tips</div>
+          <div class="points-list" id="tips-list"></div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</section>
+
+<!-- ── Features ── -->
+<section class="section" id="features">
+  <div class="section-label">How it works</div>
+  <div class="section-title">Built for serious<br/><em style="font-style:italic; color:var(--gold);">job seekers</em></div>
+
+  <div class="features-grid">
+    <div class="feat-card">
+      <div class="feat-icon">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+      </div>
+      <div class="feat-title">ATS Compatibility Scan</div>
+      <div class="feat-desc">Checks your resume against applicant tracking systems to ensure it gets past automated filters.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"/>
+        </svg>
+      </div>
+      <div class="feat-title">Keyword Gap Analysis</div>
+      <div class="feat-desc">Compare your resume to a specific job description and get the exact keywords you're missing.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+        </svg>
+      </div>
+      <div class="feat-title">Impact Score</div>
+      <div class="feat-desc">Measures the strength of your achievements and whether they use quantified, results-driven language.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+        </svg>
+      </div>
+      <div class="feat-title">6-Dimension Scoring</div>
+      <div class="feat-desc">Scores across experience, skills, education, quantified results, formatting, and action verb usage.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+        </svg>
+      </div>
+      <div class="feat-title">AI-Powered Insights</div>
+      <div class="feat-desc">Claude AI reads your resume like a recruiter, generating human-quality feedback and specific tips.</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+        </svg>
+      </div>
+      <div class="feat-title">100% Private</div>
+      <div class="feat-desc">Your resume is analyzed in real-time and never stored, logged, or shared with third parties.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Footer ── -->
+<footer>
+  <div class="footer-logo">ResumeIQ</div>
+  <div class="footer-note">Powered by Claude AI &nbsp;·&nbsp; Your data is never stored</div>
+</footer>
+
+<script>
+/* ═══════════════════════════════════════════
+   Utilities
+═══════════════════════════════════════════ */
+function updateCharCount() {
+  const v = document.getElementById('resume-text').value;
+  document.getElementById('char-count').textContent = v.length.toLocaleString();
+}
+
+function showError(msg) {
+  const el = document.getElementById('error-box');
+  document.getElementById('error-text').textContent = msg;
+  el.classList.add('visible');
+}
+
+function hideError() {
+  document.getElementById('error-box').classList.remove('visible');
+}
+
+function setUI(state) {
+  document.getElementById('form-area').style.display      = state === 'form'    ? 'block' : 'none';
+  const lo = document.getElementById('loading-overlay');
+  const rp = document.getElementById('results-panel');
+  lo.classList.toggle('visible', state === 'loading');
+  rp.classList.toggle('visible', state === 'results');
+  if (state !== 'loading') stopStages();
+}
+
+/* ═══════════════════════════════════════════
+   Loading stage ticker
+═══════════════════════════════════════════ */
+const STAGES = [
+  'Reading content…',
+  'Extracting keywords…',
+  'Scoring categories…',
+  'Evaluating impact…',
+  'Generating insights…'
+];
+let _stageIdx = 0, _stageTimer;
+
+function startStages() {
+  _stageIdx = 0;
+  document.getElementById('loading-stage').textContent = STAGES[0];
+  _stageTimer = setInterval(() => {
+    _stageIdx = (_stageIdx + 1) % STAGES.length;
+    document.getElementById('loading-stage').textContent = STAGES[_stageIdx];
+  }, 2000);
+}
+
+function stopStages() { clearInterval(_stageTimer); }
+
+/* ═══════════════════════════════════════════
+   Score helpers
+═══════════════════════════════════════════ */
+function scoreClass(n) {
+  if (n >= 80) return 'c-great';
+  if (n >= 60) return 'c-good';
+  if (n >= 40) return 'c-warn';
+  return 'c-poor';
+}
+
+function scoreTag(n) {
+  if (n >= 80) return 'Excellent';
+  if (n >= 60) return 'Good';
+  if (n >= 40) return 'Fair';
+  return 'Needs work';
+}
+
+/* ═══════════════════════════════════════════
+   Render results
+═══════════════════════════════════════════ */
+function renderResults(data) {
+  /* Score grid */
+  const metrics = [
+    { val: data.overallScore || 0,  label: 'Overall' },
+    { val: data.atsScore || 0,      label: 'ATS Fit' },
+    { val: data.impactScore || 0,   label: 'Impact' },
+    { val: data.keywordScore || 0,  label: 'Keywords' }
+  ];
+  document.getElementById('score-grid').innerHTML = metrics.map(m => `
+    <div class="score-card">
+      <div class="score-num ${scoreClass(m.val)}">${Math.round(m.val)}</div>
+      <div class="score-lbl">${m.label}</div>
+      <span class="score-tag ${scoreClass(m.val)}">${scoreTag(m.val)}</span>
+    </div>
+  `).join('');
+
+  /* Summary */
+  document.getElementById('summary-block').textContent = data.summary || '';
+
+  /* Category bars */
+  const cats = data.categories || [];
+  document.getElementById('cat-bars').innerHTML = cats.map(c => `
+    <div class="cat-bar" style="margin-bottom:12px;">
+      <div class="cat-name">${c.name}</div>
+      <div class="cat-track">
+        <div class="cat-fill" style="width:0%" data-pct="${Math.min(100, c.score)}"></div>
+      </div>
+      <div class="cat-pct">${Math.round(c.score)}</div>
+    </div>
+  `).join('');
+
+  /* Animate bars */
+  setTimeout(() => {
+    document.querySelectorAll('.cat-fill').forEach(el => {
+      el.style.width = el.dataset.pct + '%';
+    });
+  }, 100);
+
+  /* Chips */
+  document.getElementById('matched-chips').innerHTML =
+    (data.matchedKeywords || []).map(k => `<span class="chip chip-match">${k}</span>`).join('');
+  document.getElementById('missing-chips').innerHTML =
+    (data.missingKeywords || []).map(k => `<span class="chip chip-miss">${k}</span>`).join('');
+
+  /* Points */
+  document.getElementById('strengths-list').innerHTML =
+    (data.strengths || []).map(s => `
+      <div class="point-item">
+        <div class="point-marker pm-pos">✓</div>
+        <span>${s}</span>
+      </div>`).join('');
+
+  document.getElementById('improve-list').innerHTML =
+    (data.improvements || []).map(s => `
+      <div class="point-item">
+        <div class="point-marker pm-neg">!</div>
+        <span>${s}</span>
+      </div>`).join('');
+
+  document.getElementById('tips-list').innerHTML =
+    (data.tips || []).map(s => `
+      <div class="point-item">
+        <div class="point-marker pm-tip">→</div>
+        <span>${s}</span>
+      </div>`).join('');
+
+  setUI('results');
+
+  /* Scroll to results */
+  setTimeout(() => {
+    document.getElementById('results-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 200);
+}
+
+/* ═══════════════════════════════════════════
+   Main analysis
+═══════════════════════════════════════════ */
+async function runAnalysis() {
+  hideError();
+
+  const resumeText  = document.getElementById('resume-text').value.trim();
+  const targetRole  = document.getElementById('target-role').value.trim();
+  const industry    = document.getElementById('industry').value.trim();
+  const experience  = document.getElementById('experience').value;
+  const resumeType  = document.getElementById('resume-type').value;
+  const jobDesc     = document.getElementById('job-desc').value.trim();
+
+  if (!resumeText || resumeText.length < 80) {
+    showError('Please paste your resume text (at least 80 characters) before analyzing.');
+    return;
+  }
+
+  document.getElementById('analyze-btn').disabled = true;
+  setUI('loading');
+  startStages();
+
+  try {
+    const response = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ resumeText, targetRole, industry, experience, resumeType, jobDesc })
+    });
+
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(errData.error || `Server error ${response.status}`);
+    }
+
+    const data = await response.json();
+    renderResults(data);
+  } catch (err) {
+    setUI('form');
+    showError('Analysis failed: ' + err.message + '. Make sure the backend server is running.');
+  } finally {
+    document.getElementById('analyze-btn').disabled = false;
+  }
+}
+
+function resetForm() {
+  setUI('form');
+  document.getElementById('resume-text').value = '';
+  document.getElementById('target-role').value = '';
+  document.getElementById('industry').value = '';
+  document.getElementById('job-desc').value = '';
+  document.getElementById('experience').selectedIndex = 0;
+  document.getElementById('resume-type').selectedIndex = 0;
+  document.getElementById('char-count').textContent = '0';
+  hideError();
+  document.getElementById('analyzer').scrollIntoView({ behavior: 'smooth' });
+}
+
+/* Init */
+setUI('form');
+</script>
+</body>
+</html>
